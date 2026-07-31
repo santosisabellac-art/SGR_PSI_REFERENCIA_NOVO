@@ -1,32 +1,68 @@
 import flet as ft
 
+from app.ui.components.sidebar import Sidebar
+from app.ui.theme.theme import AppTheme
+
 
 def app(page: ft.Page):
+
     page.title = "SGR - Psicóloga de Referência"
 
-    page.window.width = 1400
+    page.window.width = 1450
     page.window.height = 900
-    page.window.min_width = 1200
-    page.window.min_height = 800
 
-    page.theme_mode = ft.ThemeMode.LIGHT
-    page.padding = 20
+    page.bgcolor = AppTheme.BACKGROUND
+
+    page.padding = 0
 
     page.add(
-        ft.Column(
+
+        ft.Row(
+
             controls=[
-                ft.Text(
-                    "SGR - Psicóloga de Referência",
-                    size=32,
-                    weight=ft.FontWeight.BOLD,
+
+                Sidebar(),
+
+                ft.Container(
+
+                    expand=True,
+
+                    padding=30,
+
+                    content=ft.Column(
+
+                        [
+
+                            ft.Text(
+
+                                "Bem-vinda, Isabella",
+
+                                size=28,
+
+                                weight=ft.FontWeight.BOLD,
+
+                            ),
+
+                            ft.Text(
+
+                                "Sistema de Gestão da Psicóloga de Referência",
+
+                                color=AppTheme.SUBTITLE,
+
+                            ),
+
+                        ]
+
+                    ),
+
                 ),
-                ft.Text(
-                    "Versão 0.1 Alpha",
-                    size=18,
-                    color=ft.Colors.GREY_700,
-                ),
-            ]
+
+            ],
+
+            expand=True,
+
         )
+
     )
 
 
