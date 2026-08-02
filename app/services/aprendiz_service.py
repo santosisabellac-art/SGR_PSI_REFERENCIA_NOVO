@@ -15,13 +15,22 @@ class AprendizService:
     def criar(
         self,
         nome,
-        codigo=None,
-        psicologa_referencia=None,
-        nivel_suporte=None,
+        codigo,
+        nivel_suporte,
+        dias_atendimento="",
+        horario="",
+        sala="",
+        carga_horaria_aba="",
+        observacoes="",
     ):
+
         return self.repository.criar(
             nome=nome,
             codigo=codigo,
-            psicologa_referencia=psicologa_referencia,
             nivel_suporte=nivel_suporte,
+            dias_atendimento=dias_atendimento,
+            horario=horario,
+            sala=sala,
+            carga_horaria_aba=carga_horaria_aba,
+            observacoes=observacoes,
         )

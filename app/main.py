@@ -1,6 +1,8 @@
 import flet as ft
 
 from app.ui.components.sidebar import Sidebar
+from app.ui.layout.main_layout import MainLayout
+from app.ui.pages.home_page import HomePage
 from app.ui.theme.theme import AppTheme
 
 
@@ -15,56 +17,19 @@ def app(page: ft.Page):
 
     page.padding = 0
 
-    page.add(
+    home = HomePage()
 
-        ft.Row(
-
-            controls=[
-
-                Sidebar(),
-
-                ft.Container(
-
-                    expand=True,
-
-                    padding=30,
-
-                    content=ft.Column(
-
-                        [
-
-                            ft.Text(
-
-                                "Bem-vinda, Isabella",
-
-                                size=28,
-
-                                weight=ft.FontWeight.BOLD,
-
-                            ),
-
-                            ft.Text(
-
-                                "Sistema de Gestão da Psicóloga de Referência",
-
-                                color=AppTheme.SUBTITLE,
-
-                            ),
-
-                        ]
-
-                    ),
-
-                ),
-
-            ],
-
-            expand=True,
-
-        )
-
+    layout = MainLayout(
+        sidebar=Sidebar(),
+        content=home,
     )
+
+    page.add(layout)
 
 
 def main():
     ft.app(target=app)
+
+
+if __name__ == "__main__":
+    main()
