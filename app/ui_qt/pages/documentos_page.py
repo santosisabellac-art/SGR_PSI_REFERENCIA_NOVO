@@ -1,18 +1,12 @@
+from datetime import datetime
+from pathlib import Path
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QAbstractItemView,
-    QComboBox,
-    QHBoxLayout,
-    QHeaderView,
-    QLabel,
-    QLineEdit,
-    QMessageBox,
-    QPushButton,
-    QTableWidget,
-    QTableWidgetItem,
-    QVBoxLayout,
-    QWidget,
+    QAbstractItemView, QComboBox, QHBoxLayout, QMessageBox, QPushButton,
+    QHeaderView, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
+    QLabel, QLineEdit,
 )
 
 from app.services.documento_service import DocumentoService
@@ -87,10 +81,8 @@ class DocumentosPage(QWidget):
         for documento in self.documentos:
             aprendiz = documento.aprendiz.nome if documento.aprendiz else ""
             situacao = self.service.situacao(documento).lower()
-            if (
-                (not texto or texto in aprendiz.lower() or texto in (documento.tipo or "").lower())
-                and (situacao_filtro == "todas" or situacao == situacao_filtro)
-            ):
+            if ((not texto or texto in aprendiz.lower() or texto in (documento.tipo or "").lower())
+                    and (situacao_filtro == "todas" or situacao == situacao_filtro)):
                 documentos.append(documento)
         self.lista_visivel = documentos
         self.tabela.setRowCount(len(documentos))
@@ -114,17 +106,14 @@ class DocumentosPage(QWidget):
         selecionado = documento is not None
         self.botao_editar.setEnabled(selecionado)
         self.botao_excluir.setEnabled(selecionado)
+        self.botao_status.setEnabled(selecionado)
         if not selecionado:
-            self.botao_status.setEnabled(False)
             self.botao_status.setText("Marcar como Entregue")
             return
-        entregue = self.service.situacao(documento) == "Entregue"
-        self.botao_status.setEnabled(True)
-        self.botao_status.setText("Reabrir documento" if entregue else "Marcar como Entregue")
+        self.botao_status.setText("Reabrir documento" if self.service.situacao(documento) == "Entregue" else "Marcar como Entregue")
 
     def abrir_novo_documento(self):
-        dialog = DocumentoDialog(self)
-        if dialog.exec():
+        if DocumentoDialog(self).exec():
             self.carregar_documentos()
 
     def editar_documento(self):
@@ -132,8 +121,7 @@ class DocumentosPage(QWidget):
         if documento is None:
             QMessageBox.information(self, "Editar documento", "Selecione um documento.")
             return
-        dialog = DocumentoDialog(self, documento=documento)
-        if dialog.exec():
+        if DocumentoDialog(self, documento=documento).exec():
             self.carregar_documentos()
 
     def alterar_status(self):
@@ -141,18 +129,35 @@ class DocumentosPage(QWidget):
         if documento is None:
             return
         entregue = self.service.situacao(documento) == "Entregue"
-        if entregue:
+        resultado = (
             self.service.marcar_como_pendente(documento.id)
-        else:
-            self.service.marcar_como_entregue(documento.id)
+            if entregue
+            else self.service.marcar_como_entregue(documento.id)
+        )
+        if resultado is None:
+            QMessageBox.warning(self, "Operação não concluída", "O documento não foi localizado no banco de dados.")
+            return
         self.carregar_documentos()
+        QMessageBox.information(self, "Documento atualizado", "A situação do documento foi atualizada com sucesso.")
 
     def excluir_documento(self):
         documento = self.documento_selecionado()
         if documento is None:
+            QMessageBox.information(self, "Excluir documento", "Selecione um documento.")
             return
-        resposta = QMessageBox.question(self, "Excluir documento", "Deseja realmente excluir o documento selecionado?", QMessageBox.Yes | QMessageBox.No)
+        resposta = QMessageBox.question(
+            self,
+            "Confirmar exclusão",
+            f"Deseja realmente excluir o documento?\n\n{documento.tipo}",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
         if resposta != QMessageBox.Yes:
             return
-        self.service.excluir(documento.id)
+        resultado = self.service.excluir(documento.id)
+        if not resultado:
+            QMessageBox.warning(self, "Exclusão não concluída", "O documento não foi localizado ou não pôde ser excluído.")
+            self.carregar_documentos()
+            return
         self.carregar_documentos()
+        QMessageBox.information(self, "Exclusão concluída", "O documento foi excluído com sucesso.")
