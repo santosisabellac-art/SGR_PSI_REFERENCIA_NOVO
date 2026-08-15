@@ -1,4 +1,6 @@
 from datetime import datetime
+from pathlib import Path
+import shutil
 
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
@@ -8,6 +10,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QFileDialog,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -52,15 +55,25 @@ class ConfiguracoesPage(QWidget):
         )
         descricao.setWordWrap(True)
 
+        botoes_backup = QHBoxLayout()
+
         self.botao_backup = QPushButton("Criar backup agora")
         self.botao_backup.clicked.connect(self.criar_backup)
+
+        self.botao_exportar = QPushButton("Exportar backup selecionado")
+        self.botao_exportar.clicked.connect(self.exportar_backup)
+        self.botao_exportar.setEnabled(False)
+
+        botoes_backup.addWidget(self.botao_backup)
+        botoes_backup.addWidget(self.botao_exportar)
+        botoes_backup.addStretch()
 
         self.status_backup = QLabel()
         self.status_backup.setStyleSheet("color: #374151;")
 
         card_layout.addWidget(titulo_backup)
         card_layout.addWidget(descricao)
-        card_layout.addWidget(self.botao_backup)
+        card_layout.addLayout(botoes_backup)
         card_layout.addWidget(self.status_backup)
 
         layout.addWidget(card)
@@ -88,6 +101,9 @@ class ConfiguracoesPage(QWidget):
             QHeaderView.Stretch
         )
         self.tabela.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.tabela.setSelectionBehavior(QTableWidget.SelectRows)
+        self.tabela.setSelectionMode(QTableWidget.SingleSelection)
+        self.tabela.itemSelectionChanged.connect(self.atualizar_acoes)
 
         layout.addWidget(self.tabela)
 
@@ -137,3 +153,56 @@ class ConfiguracoesPage(QWidget):
                     coluna,
                     QTableWidgetItem(valor),
                 )
+
+        self.atualizar_acoes()
+
+    def atualizar_acoes(self):
+        self.botao_exportar.setEnabled(
+            self.tabela.currentRow() >= 0
+        )
+
+    def backup_selecionado(self):
+        linha = self.tabela.currentRow()
+        backups = self.backup_service.listar_backups()
+
+        if linha < 0 or linha >= len(backups):
+            return None
+
+        return backups[linha]
+
+    def exportar_backup(self):
+        arquivo = self.backup_selecionado()
+
+        if arquivo is None:
+            QMessageBox.information(
+                self,
+                "Selecionar backup",
+                "Selecione um backup na lista antes de exportar.",
+            )
+            return
+
+        destino, _ = QFileDialog.getSaveFileName(
+            self,
+            "Exportar backup",
+            str(Path.home() / arquivo.name),
+            "Banco SQLite (*.db)",
+        )
+
+        if not destino:
+            return
+
+        try:
+            shutil.copy2(arquivo, destino)
+        except Exception as erro:
+            QMessageBox.critical(
+                self,
+                "Exportação não concluída",
+                f"Não foi possível exportar o backup.\n\n{erro}",
+            )
+            return
+
+        QMessageBox.information(
+            self,
+            "Backup exportado",
+            f"Backup salvo em:\n{destino}",
+        )
