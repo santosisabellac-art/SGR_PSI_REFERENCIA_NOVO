@@ -27,9 +27,7 @@ class AprendizRepository:
         carga_horaria_aba="",
         observacoes="",
     ):
-
         with SessionLocal() as session:
-
             aprendiz = Aprendiz(
                 nome=nome,
                 codigo=codigo,
@@ -42,11 +40,9 @@ class AprendizRepository:
                 status="Ativo",
                 ativo=True,
             )
-
             session.add(aprendiz)
             session.commit()
             session.refresh(aprendiz)
-
             return aprendiz
 
     def atualizar(
@@ -61,14 +57,10 @@ class AprendizRepository:
         carga_horaria_aba="",
         observacoes="",
     ):
-
         with SessionLocal() as session:
-
             aprendiz = session.get(Aprendiz, aprendiz_id)
-
             if aprendiz is None:
                 return None
-
             aprendiz.nome = nome
             aprendiz.codigo = codigo
             aprendiz.nivel_suporte = nivel_suporte
@@ -77,22 +69,26 @@ class AprendizRepository:
             aprendiz.sala = sala
             aprendiz.carga_horaria_aba = carga_horaria_aba
             aprendiz.observacoes = observacoes
-
             session.commit()
             session.refresh(aprendiz)
+            return aprendiz
 
+    def alterar_status(self, aprendiz_id, ativo):
+        with SessionLocal() as session:
+            aprendiz = session.get(Aprendiz, aprendiz_id)
+            if aprendiz is None:
+                return None
+            aprendiz.ativo = bool(ativo)
+            aprendiz.status = "Ativo" if aprendiz.ativo else "Inativo"
+            session.commit()
+            session.refresh(aprendiz)
             return aprendiz
 
     def excluir(self, aprendiz_id):
-
         with SessionLocal() as session:
-
             aprendiz = session.get(Aprendiz, aprendiz_id)
-
             if aprendiz is None:
                 return False
-
             session.delete(aprendiz)
             session.commit()
-
             return True
