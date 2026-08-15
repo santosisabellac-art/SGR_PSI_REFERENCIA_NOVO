@@ -15,11 +15,18 @@ class DashboardService:
     def listar_aprendizes(self):
         return self.aprendiz_service.listar()
 
+    def aprendizes_ativos(self):
+        return [a for a in self.listar_aprendizes() if getattr(a, "ativo", True)]
+
     def total_aprendizes(self):
-        return len([a for a in self.listar_aprendizes() if getattr(a, "ativo", True)])
+        return len(self.aprendizes_ativos())
 
     def pendencias_abertas(self):
-        return [p for p in self.pendencia_service.listar() if not p.concluida]
+        ativos = {a.id for a in self.aprendizes_ativos()}
+        return [
+            p for p in self.pendencia_service.listar()
+            if not p.concluida and p.aprendiz_id in ativos
+        ]
 
     def resumo_pendencias_abertas(self, pendencias=None, limite=5):
         if pendencias is None:
@@ -33,13 +40,21 @@ class DashboardService:
         ]
 
     def documentos_pendentes(self):
-        return [d for d in self.documento_service.listar() if self.documento_service.situacao(d) != "Entregue"]
+        ativos = {a.id for a in self.aprendizes_ativos()}
+        return [
+            d for d in self.documento_service.listar()
+            if d.aprendiz_id in ativos
+            and self.documento_service.situacao(d) != "Entregue"
+        ]
 
     def documentos_vencidos(self):
-        return [d for d in self.documentos_pendentes() if self.documento_service.situacao(d) == "Vencido"]
+        return [
+            d for d in self.documentos_pendentes()
+            if self.documento_service.situacao(d) == "Vencido"
+        ]
 
     def prioridades(self, limite=10):
-        nomes = {a.id: a.nome for a in self.listar_aprendizes()}
+        nomes = {a.id: a.nome for a in self.aprendizes_ativos()}
         prioridades = []
         for documento in self.documentos_vencidos():
             prioridades.append({
@@ -68,23 +83,29 @@ class DashboardService:
         dias_hoje = nomes_dias[datetime.now().weekday()]
         aprendizes = []
 
-        for aprendiz in self.listar_aprendizes():
-            if not getattr(aprendiz, "ativo", True):
-                continue
+        for aprendiz in self.aprendizes_ativos():
             dias = (aprendiz.dias_atendimento or "").lower()
-            if not dias or any(dia in dias for dia in dias_hoje):
+            if not dias:
+                continue
+            if any(dia in dias for dia in dias_hoje):
                 aprendizes.append({
                     "nome": aprendiz.nome,
                     "horario": aprendiz.horario or "Não informado",
                     "sala": aprendiz.sala or "-",
                 })
 
-        aprendizes.sort(key=lambda x: (x["horario"] == "Não informado", x["horario"], x["nome"].lower()))
+        aprendizes.sort(
+            key=lambda x: (
+                x["horario"] == "Não informado",
+                x["horario"],
+                x["nome"].lower(),
+            )
+        )
         return aprendizes
 
     def alertas(self):
         alertas = []
-        for aprendiz in self.listar_aprendizes():
+        for aprendiz in self.aprendizes_ativos():
             if not aprendiz.sala:
                 alertas.append(f"{aprendiz.nome} está sem sala.")
             if not aprendiz.horario:
@@ -96,7 +117,7 @@ class DashboardService:
     def resumo(self):
         pendencias_abertas = self.pendencias_abertas()
         documentos_pendentes = self.documentos_pendentes()
-        documentos_vencidos = [d for d in documentos_pendentes if self.documento_service.situacao(d) == "Vencido"]
+        documentos_vencidos = self.documentos_vencidos()
         return {
             "data": datetime.now(),
             "total_aprendizes": self.total_aprendizes(),
