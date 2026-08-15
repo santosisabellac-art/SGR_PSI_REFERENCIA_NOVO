@@ -27,5 +27,23 @@ class SupervisaoService:
             proximos_passos=proximos_passos,
         )
 
+    def atualizar(
+        self,
+        supervisao_id,
+        data,
+        responsavel,
+        resumo,
+        orientacoes="",
+        proximos_passos="",
+    ):
+        return self.repository.atualizar(
+            supervisao_id=supervisao_id,
+            data=data,
+            responsavel=responsavel,
+            resumo=resumo,
+            orientacoes=orientacoes,
+            proximos_passos=proximos_passos,
+        )
+
     def excluir(self, supervisao_id):
         return self.repository.excluir(supervisao_id)
