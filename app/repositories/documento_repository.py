@@ -39,6 +39,30 @@ class DocumentoRepository:
 
             return documento
 
+    def atualizar(
+        self,
+        documento_id,
+        aprendiz_id,
+        tipo,
+        prazo=None,
+        observacoes="",
+    ):
+        with SessionLocal() as session:
+            documento = session.get(Documento, documento_id)
+
+            if documento is None:
+                return None
+
+            documento.aprendiz_id = aprendiz_id
+            documento.tipo = tipo
+            documento.prazo = prazo
+            documento.observacoes = observacoes
+
+            session.commit()
+            session.refresh(documento)
+
+            return documento
+
     def atualizar_status(self, documento_id, status):
         with SessionLocal() as session:
             documento = session.get(Documento, documento_id)
