@@ -89,6 +89,19 @@ class AprendizRepository:
             aprendiz = session.get(Aprendiz, aprendiz_id)
             if aprendiz is None:
                 return False
+
+            possui_historico = any(
+                (
+                    aprendiz.pendencias,
+                    aprendiz.documentos,
+                    aprendiz.supervisoes,
+                    aprendiz.avaliacoes,
+                )
+            )
+
+            if possui_historico:
+                return False
+
             session.delete(aprendiz)
             session.commit()
             return True
