@@ -32,12 +32,12 @@ class DashboardPage(QWidget):
         titulo = QLabel("Dashboard Operacional")
         titulo.setFont(QFont("Segoe UI", 24, QFont.Bold))
 
-        botao_atualizar = QPushButton("Atualizar")
-        botao_atualizar.clicked.connect(self.atualizar_dashboard)
+        self.botao_atualizar = QPushButton("Atualizar")
+        self.botao_atualizar.clicked.connect(self.atualizar_dashboard)
 
         cabecalho.addWidget(titulo)
         cabecalho.addStretch()
-        cabecalho.addWidget(botao_atualizar)
+        cabecalho.addWidget(self.botao_atualizar)
 
         layout.addLayout(cabecalho)
 
@@ -49,24 +49,30 @@ class DashboardPage(QWidget):
 
         cards = QHBoxLayout()
 
-        _, self.total_aprendizes = self.criar_card(
-            cards,
-            "Aprendizes ativos",
-        )
-        _, self.total_pendencias = self.criar_card(
-            cards,
-            "Pendências abertas",
-        )
-        _, self.total_documentos = self.criar_card(
-            cards,
-            "Documentos pendentes",
-        )
-        _, self.total_vencidos = self.criar_card(
-            cards,
-            "Documentos vencidos",
-        )
+        _, self.total_aprendizes = self.criar_card(cards, "Aprendizes ativos")
+        _, self.total_pendencias = self.criar_card(cards, "Pendências abertas")
+        _, self.total_documentos = self.criar_card(cards, "Documentos pendentes")
+        _, self.total_vencidos = self.criar_card(cards, "Documentos vencidos")
+        _, self.total_agenda = self.criar_card(cards, "Agenda de hoje")
 
         layout.addLayout(cards)
+
+        titulo_agenda = QLabel("Agenda de hoje")
+        titulo_agenda.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        layout.addWidget(titulo_agenda)
+
+        self.tabela_agenda = QTableWidget()
+        self.tabela_agenda.setColumnCount(3)
+        self.tabela_agenda.setHorizontalHeaderLabels(
+            ["Aprendiz", "Horário", "Sala"]
+        )
+        self.tabela_agenda.horizontalHeader().setSectionResizeMode(
+            QHeaderView.Stretch
+        )
+        self.tabela_agenda.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tabela_agenda.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tabela_agenda.setMinimumHeight(180)
+        layout.addWidget(self.tabela_agenda)
 
         titulo_prioridades = QLabel("Prioridades")
         titulo_prioridades.setFont(QFont("Segoe UI", 14, QFont.Bold))
@@ -80,14 +86,9 @@ class DashboardPage(QWidget):
         self.tabela_prioridades.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch
         )
-        self.tabela_prioridades.setSelectionBehavior(
-            QAbstractItemView.SelectRows
-        )
-        self.tabela_prioridades.setEditTriggers(
-            QAbstractItemView.NoEditTriggers
-        )
+        self.tabela_prioridades.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tabela_prioridades.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tabela_prioridades.setMinimumHeight(210)
-
         layout.addWidget(self.tabela_prioridades)
 
         titulo_alertas = QLabel("Alertas de cadastro")
@@ -120,7 +121,6 @@ class DashboardPage(QWidget):
 
         card_layout.addWidget(titulo_card)
         card_layout.addWidget(quantidade)
-
         layout.addWidget(card)
 
         return card, quantidade
@@ -129,15 +129,20 @@ class DashboardPage(QWidget):
         dados = self.service.resumo()
 
         self.total_aprendizes.setText(str(dados["total_aprendizes"]))
-        self.total_pendencias.setText(
-            str(dados["total_pendencias_abertas"])
-        )
-        self.total_documentos.setText(
-            str(dados["total_documentos_pendentes"])
-        )
-        self.total_vencidos.setText(
-            str(dados["total_documentos_vencidos"])
-        )
+        self.total_pendencias.setText(str(dados["total_pendencias_abertas"]))
+        self.total_documentos.setText(str(dados["total_documentos_pendentes"]))
+        self.total_vencidos.setText(str(dados["total_documentos_vencidos"]))
+        self.total_agenda.setText(str(len(dados["agenda"])))
+
+        agenda = dados["agenda"]
+        self.tabela_agenda.setRowCount(len(agenda))
+
+        for linha, item in enumerate(agenda):
+            valores = [item["nome"], item["horario"], item["sala"]]
+            for coluna, valor in enumerate(valores):
+                self.tabela_agenda.setItem(
+                    linha, coluna, QTableWidgetItem(str(valor))
+                )
 
         prioridades = dados["prioridades"]
         self.tabela_prioridades.setRowCount(len(prioridades))
@@ -148,16 +153,12 @@ class DashboardPage(QWidget):
                 prioridade["aprendiz"],
                 prioridade["detalhe"],
             ]
-
             for coluna, valor in enumerate(valores):
                 self.tabela_prioridades.setItem(
-                    linha,
-                    coluna,
-                    QTableWidgetItem(valor),
+                    linha, coluna, QTableWidgetItem(str(valor))
                 )
 
         self.lista_alertas.clear()
-
         alertas = dados["alertas"]
         if alertas:
             self.lista_alertas.addItems(alertas)
