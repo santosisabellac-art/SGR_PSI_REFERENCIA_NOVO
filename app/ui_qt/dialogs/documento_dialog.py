@@ -7,9 +7,9 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QMessageBox,
-    QPushButton,
     QTextEdit,
     QVBoxLayout,
+    QPushButton,
 )
 
 from app.services.aprendiz_service import AprendizService
@@ -18,14 +18,18 @@ from app.services.documento_service import DocumentoService
 
 class DocumentoDialog(QDialog):
 
-    def __init__(self, parent=None, aprendiz_id=None):
+    def __init__(self, parent=None, aprendiz_id=None, documento=None):
         super().__init__(parent)
 
         self.documento_service = DocumentoService()
         self.aprendiz_service = AprendizService()
         self.aprendiz_id = aprendiz_id
+        self.documento = documento
+        self.editando = documento is not None
 
-        self.setWindowTitle("Novo Documento")
+        self.setWindowTitle(
+            "Editar Documento" if self.editando else "Novo Documento"
+        )
         self.resize(520, 360)
 
         layout = QVBoxLayout(self)
@@ -74,20 +78,13 @@ class DocumentoDialog(QDialog):
         botoes.addStretch()
         botoes.addWidget(botao_cancelar)
         botoes.addWidget(botao_salvar)
-
         layout.addLayout(botoes)
 
         botao_cancelar.clicked.connect(self.reject)
         botao_salvar.clicked.connect(self.salvar)
 
         self.carregar_aprendizes()
-
-        if self.aprendiz_id is not None:
-            indice = self.aprendiz.findData(self.aprendiz_id)
-
-            if indice >= 0:
-                self.aprendiz.setCurrentIndex(indice)
-                self.aprendiz.setEnabled(False)
+        self.preencher_formulario()
 
     def carregar_aprendizes(self):
         aprendizes = [
@@ -99,6 +96,41 @@ class DocumentoDialog(QDialog):
         for aprendiz in aprendizes:
             self.aprendiz.addItem(aprendiz.nome, aprendiz.id)
 
+    def preencher_formulario(self):
+        if self.documento is not None:
+            indice = self.aprendiz.findData(self.documento.aprendiz_id)
+            if indice >= 0:
+                self.aprendiz.setCurrentIndex(indice)
+
+            tipo = self.documento.tipo or ""
+            indice_tipo = self.tipo.findText(tipo)
+            if indice_tipo >= 0:
+                self.tipo.setCurrentIndex(indice_tipo)
+            else:
+                self.tipo.setCurrentText(tipo)
+
+            if self.documento.prazo:
+                self.prazo.setDate(
+                    QDate(
+                        self.documento.prazo.year,
+                        self.documento.prazo.month,
+                        self.documento.prazo.day,
+                    )
+                )
+                self.sem_prazo.setChecked(False)
+            else:
+                self.sem_prazo.setChecked(True)
+
+            self.observacoes.setPlainText(
+                self.documento.observacoes or ""
+            )
+
+        elif self.aprendiz_id is not None:
+            indice = self.aprendiz.findData(self.aprendiz_id)
+            if indice >= 0:
+                self.aprendiz.setCurrentIndex(indice)
+                self.aprendiz.setEnabled(False)
+
     def salvar(self):
         tipo = self.tipo.currentText().strip()
         aprendiz_id = self.aprendiz.currentData()
@@ -107,7 +139,7 @@ class DocumentoDialog(QDialog):
             QMessageBox.warning(
                 self,
                 "Aprendiz obrigatório",
-                "Cadastre ou selecione um aprendiz antes de criar o documento.",
+                "Cadastre ou selecione um aprendiz antes de salvar o documento.",
             )
             return
 
@@ -123,11 +155,22 @@ class DocumentoDialog(QDialog):
         if not self.sem_prazo.isChecked():
             prazo = self.prazo.date().toPython()
 
-        self.documento_service.criar(
-            aprendiz_id=aprendiz_id,
-            tipo=tipo,
-            prazo=prazo,
-            observacoes=self.observacoes.toPlainText().strip(),
-        )
+        observacoes = self.observacoes.toPlainText().strip()
+
+        if self.documento is None:
+            self.documento_service.criar(
+                aprendiz_id=aprendiz_id,
+                tipo=tipo,
+                prazo=prazo,
+                observacoes=observacoes,
+            )
+        else:
+            self.documento_service.atualizar(
+                documento_id=self.documento.id,
+                aprendiz_id=aprendiz_id,
+                tipo=tipo,
+                prazo=prazo,
+                observacoes=observacoes,
+            )
 
         self.accept()
