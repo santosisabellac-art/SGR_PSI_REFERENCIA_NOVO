@@ -47,6 +47,12 @@ class DocumentoService:
             "Entregue",
         )
 
+    def marcar_como_pendente(self, documento_id):
+        return self.repository.atualizar_status(
+            documento_id,
+            "Pendente",
+        )
+
     def excluir(self, documento_id):
         return self.repository.excluir(documento_id)
 
