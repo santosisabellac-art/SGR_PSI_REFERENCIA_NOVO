@@ -38,15 +38,18 @@ class DocumentosPage(QWidget):
         titulo.setFont(QFont("Segoe UI", 24, QFont.Bold))
 
         self.botao_novo = QPushButton("+ Novo Documento")
+        self.botao_editar = QPushButton("✏ Editar")
         self.botao_entregar = QPushButton("Marcar como Entregue")
         self.botao_excluir = QPushButton("Excluir")
 
         self.botao_novo.clicked.connect(self.abrir_novo_documento)
+        self.botao_editar.clicked.connect(self.editar_documento)
         self.botao_entregar.clicked.connect(self.marcar_como_entregue)
         self.botao_excluir.clicked.connect(self.excluir_documento)
 
         cabecalho.addWidget(titulo)
         cabecalho.addStretch()
+        cabecalho.addWidget(self.botao_editar)
         cabecalho.addWidget(self.botao_entregar)
         cabecalho.addWidget(self.botao_excluir)
         cabecalho.addWidget(self.botao_novo)
@@ -64,36 +67,25 @@ class DocumentosPage(QWidget):
         self.filtro_situacao.addItem("Pendentes", "pendente")
         self.filtro_situacao.addItem("Entregues", "entregue")
         self.filtro_situacao.addItem("Vencidos", "vencido")
-        self.filtro_situacao.currentIndexChanged.connect(
-            self.aplicar_filtros
-        )
+        self.filtro_situacao.currentIndexChanged.connect(self.aplicar_filtros)
 
         filtros.addWidget(self.pesquisa)
         filtros.addWidget(self.filtro_situacao)
-
         layout.addLayout(filtros)
 
         self.tabela = QTableWidget()
         self.tabela.setColumnCount(5)
         self.tabela.setHorizontalHeaderLabels(
-            [
-                "Aprendiz",
-                "Documento",
-                "Prazo",
-                "Situação",
-                "Observações",
-            ]
+            ["Aprendiz", "Documento", "Prazo", "Situação", "Observações"]
         )
-        self.tabela.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch
-        )
+        self.tabela.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tabela.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tabela.setSelectionMode(QAbstractItemView.SingleSelection)
         self.tabela.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tabela.doubleClicked.connect(self.editar_documento)
         self.tabela.itemSelectionChanged.connect(self.atualizar_botoes)
 
         layout.addWidget(self.tabela)
-
         self.carregar_documentos()
 
     def carregar_documentos(self):
@@ -103,7 +95,6 @@ class DocumentosPage(QWidget):
     def aplicar_filtros(self):
         texto = self.pesquisa.text().lower().strip()
         situacao_filtro = self.filtro_situacao.currentData()
-
         documentos = []
 
         for documento in self.documentos:
@@ -113,11 +104,10 @@ class DocumentosPage(QWidget):
             corresponde_texto = (
                 not texto
                 or texto in aprendiz.lower()
-                or texto in documento.tipo.lower()
+                or texto in (documento.tipo or "").lower()
             )
             corresponde_situacao = (
-                situacao_filtro == "todas"
-                or situacao == situacao_filtro
+                situacao_filtro == "todas" or situacao == situacao_filtro
             )
 
             if corresponde_texto and corresponde_situacao:
@@ -146,42 +136,49 @@ class DocumentosPage(QWidget):
             ]
 
             for coluna, valor in enumerate(valores):
-                item = QTableWidgetItem(valor)
-
+                item = QTableWidgetItem(str(valor))
                 if coluna == 3 and valor == "Vencido":
                     item.setForeground(Qt.red)
-
                 self.tabela.setItem(linha, coluna, item)
 
         self.atualizar_botoes()
 
-    def abrir_novo_documento(self):
-        dialog = DocumentoDialog(self)
-
-        if dialog.exec():
-            self.carregar_documentos()
-
     def documento_selecionado(self):
         linha = self.tabela.currentRow()
-
-        if linha < 0:
+        if linha < 0 or linha >= len(self.lista_visivel):
             return None
-
         return self.lista_visivel[linha]
 
     def atualizar_botoes(self):
         documento = self.documento_selecionado()
         selecionado = documento is not None
-
+        self.botao_editar.setEnabled(selecionado)
         self.botao_excluir.setEnabled(selecionado)
         self.botao_entregar.setEnabled(
-            selecionado
-            and self.service.situacao(documento) != "Entregue"
+            selecionado and self.service.situacao(documento) != "Entregue"
         )
+
+    def abrir_novo_documento(self):
+        dialog = DocumentoDialog(self)
+        if dialog.exec():
+            self.carregar_documentos()
+
+    def editar_documento(self):
+        documento = self.documento_selecionado()
+        if documento is None:
+            QMessageBox.information(
+                self,
+                "Editar documento",
+                "Selecione um documento.",
+            )
+            return
+
+        dialog = DocumentoDialog(self, documento=documento)
+        if dialog.exec():
+            self.carregar_documentos()
 
     def marcar_como_entregue(self):
         documento = self.documento_selecionado()
-
         if documento is None:
             return
 
@@ -190,7 +187,6 @@ class DocumentosPage(QWidget):
 
     def excluir_documento(self):
         documento = self.documento_selecionado()
-
         if documento is None:
             return
 
