@@ -23,7 +23,6 @@ class AprendizService:
         carga_horaria_aba="",
         observacoes="",
     ):
-
         return self.repository.criar(
             nome=nome,
             codigo=codigo,
@@ -47,7 +46,6 @@ class AprendizService:
         carga_horaria_aba="",
         observacoes="",
     ):
-
         return self.repository.atualizar(
             aprendiz_id=aprendiz_id,
             nome=nome,
@@ -59,6 +57,9 @@ class AprendizService:
             carga_horaria_aba=carga_horaria_aba,
             observacoes=observacoes,
         )
+
+    def alterar_status(self, aprendiz_id, ativo):
+        return self.repository.alterar_status(aprendiz_id, ativo)
 
     def excluir(self, aprendiz_id):
         return self.repository.excluir(aprendiz_id)
