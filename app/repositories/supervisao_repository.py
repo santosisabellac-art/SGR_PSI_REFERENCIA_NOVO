@@ -34,21 +34,38 @@ class SupervisaoRepository:
                 orientacoes=orientacoes,
                 proximos_passos=proximos_passos,
             )
-
             session.add(supervisao)
             session.commit()
             session.refresh(supervisao)
+            return supervisao
 
+    def atualizar(
+        self,
+        supervisao_id,
+        data,
+        responsavel,
+        resumo,
+        orientacoes="",
+        proximos_passos="",
+    ):
+        with SessionLocal() as session:
+            supervisao = session.get(Supervisao, supervisao_id)
+            if supervisao is None:
+                return None
+            supervisao.data = data
+            supervisao.responsavel = responsavel
+            supervisao.resumo = resumo
+            supervisao.orientacoes = orientacoes
+            supervisao.proximos_passos = proximos_passos
+            session.commit()
+            session.refresh(supervisao)
             return supervisao
 
     def excluir(self, supervisao_id):
         with SessionLocal() as session:
             supervisao = session.get(Supervisao, supervisao_id)
-
             if supervisao is None:
                 return False
-
             session.delete(supervisao)
             session.commit()
-
             return True
