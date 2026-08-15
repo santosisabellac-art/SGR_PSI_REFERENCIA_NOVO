@@ -25,6 +25,22 @@ class DocumentoService:
             observacoes=observacoes,
         )
 
+    def atualizar(
+        self,
+        documento_id,
+        aprendiz_id,
+        tipo,
+        prazo=None,
+        observacoes="",
+    ):
+        return self.repository.atualizar(
+            documento_id=documento_id,
+            aprendiz_id=aprendiz_id,
+            tipo=tipo,
+            prazo=prazo,
+            observacoes=observacoes,
+        )
+
     def marcar_como_entregue(self, documento_id):
         return self.repository.atualizar_status(
             documento_id,
