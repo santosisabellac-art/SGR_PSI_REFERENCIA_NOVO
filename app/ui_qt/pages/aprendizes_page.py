@@ -33,7 +33,6 @@ class AprendizesPage(QWidget):
         layout.setContentsMargins(30, 30, 30, 30)
 
         # Cabeçalho
-
         cabecalho = QHBoxLayout()
 
         titulo = QLabel("Aprendizes")
@@ -59,7 +58,6 @@ class AprendizesPage(QWidget):
         layout.addLayout(cabecalho)
 
         # Pesquisa
-
         self.pesquisa = QLineEdit()
         self.pesquisa.setPlaceholderText("Pesquisar aprendiz...")
         self.pesquisa.textChanged.connect(self.filtrar_tabela)
@@ -67,17 +65,17 @@ class AprendizesPage(QWidget):
         layout.addWidget(self.pesquisa)
 
         # Tabela
-
         self.tabela = QTableWidget()
-
-        self.tabela.setColumnCount(5)
-
+        self.tabela.setColumnCount(8)
         self.tabela.setHorizontalHeaderLabels(
             [
                 "Nome",
                 "Código",
                 "Nível",
                 "Sala",
+                "Dias",
+                "Horário",
+                "Carga ABA",
                 "Status",
             ]
         )
@@ -98,66 +96,40 @@ class AprendizesPage(QWidget):
             QAbstractItemView.NoEditTriggers
         )
 
-        self.tabela.doubleClicked.connect(
-            self.editar_aprendiz
-        )
+        self.tabela.doubleClicked.connect(self.editar_aprendiz)
 
         layout.addWidget(self.tabela)
 
         self.carregar_aprendizes()
 
-    # -------------------------------------------------
-
     def carregar_aprendizes(self):
-
         self.aprendizes = self.service.listar()
-
         self.preencher_tabela(self.aprendizes)
 
-    # -------------------------------------------------
-
     def preencher_tabela(self, lista):
-
         self.lista_visivel = lista
-
         self.tabela.setRowCount(len(lista))
 
         for linha, aprendiz in enumerate(lista):
+            valores = [
+                aprendiz.nome,
+                aprendiz.codigo,
+                aprendiz.nivel_suporte,
+                aprendiz.sala or "",
+                aprendiz.dias_atendimento or "",
+                aprendiz.horario or "",
+                aprendiz.carga_horaria_aba or "",
+                aprendiz.status or "Ativo",
+            ]
 
-            self.tabela.setItem(
-                linha,
-                0,
-                QTableWidgetItem(aprendiz.nome),
-            )
-
-            self.tabela.setItem(
-                linha,
-                1,
-                QTableWidgetItem(aprendiz.codigo),
-            )
-
-            self.tabela.setItem(
-                linha,
-                2,
-                QTableWidgetItem(aprendiz.nivel_suporte),
-            )
-
-            self.tabela.setItem(
-                linha,
-                3,
-                QTableWidgetItem(aprendiz.sala or ""),
-            )
-
-            self.tabela.setItem(
-                linha,
-                4,
-                QTableWidgetItem(aprendiz.status),
-            )
-
-    # -------------------------------------------------
+            for coluna, valor in enumerate(valores):
+                self.tabela.setItem(
+                    linha,
+                    coluna,
+                    QTableWidgetItem(str(valor)),
+                )
 
     def filtrar_tabela(self):
-
         texto = self.pesquisa.text().lower().strip()
 
         if texto == "":
@@ -165,38 +137,31 @@ class AprendizesPage(QWidget):
             return
 
         filtrados = [
-            a
-            for a in self.aprendizes
-            if texto in a.nome.lower()
-            or texto in a.codigo.lower()
+            aprendiz
+            for aprendiz in self.aprendizes
+            if texto in aprendiz.nome.lower()
+            or texto in aprendiz.codigo.lower()
+            or texto in (aprendiz.sala or "").lower()
+            or texto in (aprendiz.nivel_suporte or "").lower()
         ]
 
         self.preencher_tabela(filtrados)
 
-    # -------------------------------------------------
-
     def abrir_dialog(self):
-
         dialog = AprendizDialog(self)
 
         if dialog.exec():
-
             self.carregar_aprendizes()
 
-    # -------------------------------------------------
-
     def editar_aprendiz(self):
-
         linha = self.tabela.currentRow()
 
         if linha < 0:
-
             QMessageBox.information(
                 self,
                 "Editar",
-                "Selecione um aprendiz."
+                "Selecione um aprendiz.",
             )
-
             return
 
         aprendiz = self.lista_visivel[linha]
@@ -207,41 +172,30 @@ class AprendizesPage(QWidget):
         )
 
         if dialog.exec():
-
             self.carregar_aprendizes()
 
-    # -------------------------------------------------
-
     def abrir_painel_360(self):
-
         linha = self.tabela.currentRow()
 
         if linha < 0:
-
             QMessageBox.information(
                 self,
                 "Painel 360°",
                 "Selecione um aprendiz.",
             )
-
             return
 
         self.painel_solicitado.emit(self.lista_visivel[linha])
 
-    # -------------------------------------------------
-
     def excluir_aprendiz(self):
-
         linha = self.tabela.currentRow()
 
         if linha < 0:
-
             QMessageBox.information(
                 self,
                 "Excluir",
-                "Selecione um aprendiz."
+                "Selecione um aprendiz.",
             )
-
             return
 
         aprendiz = self.lista_visivel[linha]
@@ -257,5 +211,4 @@ class AprendizesPage(QWidget):
             return
 
         self.service.excluir(aprendiz.id)
-
         self.carregar_aprendizes()
