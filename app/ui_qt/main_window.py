@@ -12,7 +12,7 @@ from app.ui_qt.pages.aprendizes_page import AprendizesPage
 from app.ui_qt.pages.configuracoes_page import ConfiguracoesPage
 from app.ui_qt.pages.dashboard_page import DashboardPage
 from app.ui_qt.pages.documentos_page import DocumentosPage
-from app.ui_qt.pages.painel_360_page import Painel360Page
+from app.ui_qt.pages.painel_360_avaliacao_page import Painel360AvaliacaoPage
 from app.ui_qt.theme.theme import Theme
 
 
@@ -22,10 +22,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("SGR - Psicóloga de Referência")
-        self.resize(
-            Theme.WINDOW_WIDTH,
-            Theme.WINDOW_HEIGHT,
-        )
+        self.resize(Theme.WINDOW_WIDTH, Theme.WINDOW_HEIGHT)
 
         central = QWidget()
         self.setCentralWidget(central)
@@ -34,10 +31,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Menu lateral
         self.sidebar = Sidebar()
-
-        # Área de páginas
         self.stack = QStackedWidget()
 
         self.home = HomePage()
@@ -48,41 +42,34 @@ class MainWindow(QMainWindow):
         self.configuracoes = ConfiguracoesPage()
         self.painel_360 = None
 
-        self.stack.addWidget(self.home)         # índice 0
-        self.stack.addWidget(self.aprendizes)   # índice 1
-        self.stack.addWidget(self.agenda)        # índice 2
-        self.stack.addWidget(self.documentos)    # índice 3
-        self.stack.addWidget(self.dashboard)     # índice 4
-        self.stack.addWidget(self.configuracoes) # índice 5
+        self.stack.addWidget(self.home)
+        self.stack.addWidget(self.aprendizes)
+        self.stack.addWidget(self.agenda)
+        self.stack.addWidget(self.documentos)
+        self.stack.addWidget(self.dashboard)
+        self.stack.addWidget(self.configuracoes)
 
         layout.addWidget(self.sidebar)
         layout.addWidget(self.stack)
 
-        # Conecta o clique do menu
         self.sidebar.pagina_selecionada.connect(self.trocar_pagina)
         self.aprendizes.painel_solicitado.connect(self.abrir_painel_360)
 
     def trocar_pagina(self, pagina):
-
         if pagina == "home":
             self.stack.setCurrentWidget(self.home)
-
         elif pagina == "aprendizes":
             self.aprendizes.carregar_aprendizes()
             self.stack.setCurrentWidget(self.aprendizes)
-
         elif pagina == "agenda":
             self.agenda.carregar_agenda()
             self.stack.setCurrentWidget(self.agenda)
-
         elif pagina == "documentos":
             self.documentos.carregar_documentos()
             self.stack.setCurrentWidget(self.documentos)
-
         elif pagina == "dashboard":
             self.dashboard.atualizar_dashboard()
             self.stack.setCurrentWidget(self.dashboard)
-
         elif pagina == "configuracoes":
             self.configuracoes.carregar_backups()
             self.stack.setCurrentWidget(self.configuracoes)
@@ -92,7 +79,7 @@ class MainWindow(QMainWindow):
             self.stack.removeWidget(self.painel_360)
             self.painel_360.deleteLater()
 
-        self.painel_360 = Painel360Page(aprendiz)
+        self.painel_360 = Painel360AvaliacaoPage(aprendiz)
         self.painel_360.aprendiz_atualizado.connect(
             self.aprendizes.carregar_aprendizes
         )
