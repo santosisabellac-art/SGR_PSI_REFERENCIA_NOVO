@@ -2,6 +2,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QComboBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -31,8 +32,8 @@ class AprendizesPage(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(12)
 
-        # Cabeçalho
         cabecalho = QHBoxLayout()
 
         titulo = QLabel("Aprendizes")
@@ -57,14 +58,37 @@ class AprendizesPage(QWidget):
 
         layout.addLayout(cabecalho)
 
-        # Pesquisa
+        filtros = QHBoxLayout()
+
         self.pesquisa = QLineEdit()
-        self.pesquisa.setPlaceholderText("Pesquisar aprendiz...")
-        self.pesquisa.textChanged.connect(self.filtrar_tabela)
+        self.pesquisa.setPlaceholderText(
+            "Pesquisar por nome, código, sala ou nível..."
+        )
+        self.pesquisa.textChanged.connect(self.aplicar_filtros)
 
-        layout.addWidget(self.pesquisa)
+        self.filtro_status = QComboBox()
+        self.filtro_status.addItem("Todos os status", "todos")
+        self.filtro_status.addItem("Ativos", "ativo")
+        self.filtro_status.addItem("Inativos", "inativo")
+        self.filtro_status.currentIndexChanged.connect(self.aplicar_filtros)
 
-        # Tabela
+        self.filtro_nivel = QComboBox()
+        self.filtro_nivel.addItem("Todos os níveis", "todos")
+        self.filtro_nivel.addItem("Nível 1", "nível 1")
+        self.filtro_nivel.addItem("Nível 2", "nível 2")
+        self.filtro_nivel.addItem("Nível 3", "nível 3")
+        self.filtro_nivel.currentIndexChanged.connect(self.aplicar_filtros)
+
+        filtros.addWidget(self.pesquisa, 1)
+        filtros.addWidget(self.filtro_status)
+        filtros.addWidget(self.filtro_nivel)
+
+        layout.addLayout(filtros)
+
+        self.resumo = QLabel()
+        self.resumo.setStyleSheet("color: #374151; font-weight: 600;")
+        layout.addWidget(self.resumo)
+
         self.tabela = QTableWidget()
         self.tabela.setColumnCount(8)
         self.tabela.setHorizontalHeaderLabels(
@@ -83,19 +107,9 @@ class AprendizesPage(QWidget):
         self.tabela.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch
         )
-
-        self.tabela.setSelectionBehavior(
-            QAbstractItemView.SelectRows
-        )
-
-        self.tabela.setSelectionMode(
-            QAbstractItemView.SingleSelection
-        )
-
-        self.tabela.setEditTriggers(
-            QAbstractItemView.NoEditTriggers
-        )
-
+        self.tabela.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tabela.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.tabela.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tabela.doubleClicked.connect(self.editar_aprendiz)
 
         layout.addWidget(self.tabela)
@@ -104,13 +118,17 @@ class AprendizesPage(QWidget):
 
     def carregar_aprendizes(self):
         self.aprendizes = self.service.listar()
-        self.preencher_tabela(self.aprendizes)
+        self.aplicar_filtros()
 
     def preencher_tabela(self, lista):
         self.lista_visivel = lista
         self.tabela.setRowCount(len(lista))
 
         for linha, aprendiz in enumerate(lista):
+            status = aprendiz.status or (
+                "Ativo" if getattr(aprendiz, "ativo", True) else "Inativo"
+            )
+
             valores = [
                 aprendiz.nome,
                 aprendiz.codigo,
@@ -119,7 +137,7 @@ class AprendizesPage(QWidget):
                 aprendiz.dias_atendimento or "",
                 aprendiz.horario or "",
                 aprendiz.carga_horaria_aba or "",
-                aprendiz.status or "Ativo",
+                status,
             ]
 
             for coluna, valor in enumerate(valores):
@@ -129,27 +147,49 @@ class AprendizesPage(QWidget):
                     QTableWidgetItem(str(valor)),
                 )
 
-    def filtrar_tabela(self):
+        self.resumo.setText(f"{len(lista)} aprendiz(es) exibido(s).")
+
+    def aplicar_filtros(self):
         texto = self.pesquisa.text().lower().strip()
+        status_filtro = self.filtro_status.currentData()
+        nivel_filtro = self.filtro_nivel.currentData()
 
-        if texto == "":
-            self.preencher_tabela(self.aprendizes)
-            return
+        filtrados = []
 
-        filtrados = [
-            aprendiz
-            for aprendiz in self.aprendizes
-            if texto in aprendiz.nome.lower()
-            or texto in aprendiz.codigo.lower()
-            or texto in (aprendiz.sala or "").lower()
-            or texto in (aprendiz.nivel_suporte or "").lower()
-        ]
+        for aprendiz in self.aprendizes:
+            status = (aprendiz.status or "").lower().strip()
+            if not status:
+                status = "ativo" if getattr(aprendiz, "ativo", True) else "inativo"
+
+            nivel = (aprendiz.nivel_suporte or "").lower().strip()
+
+            corresponde_texto = (
+                not texto
+                or texto in (aprendiz.nome or "").lower()
+                or texto in (aprendiz.codigo or "").lower()
+                or texto in (aprendiz.sala or "").lower()
+                or texto in nivel
+            )
+
+            corresponde_status = (
+                status_filtro == "todos"
+                or status == status_filtro
+            )
+
+            corresponde_nivel = (
+                nivel_filtro == "todos"
+                or nivel == nivel_filtro
+                or nivel.replace("nível", "nivel")
+                == nivel_filtro.replace("nível", "nivel")
+            )
+
+            if corresponde_texto and corresponde_status and corresponde_nivel:
+                filtrados.append(aprendiz)
 
         self.preencher_tabela(filtrados)
 
     def abrir_dialog(self):
         dialog = AprendizDialog(self)
-
         if dialog.exec():
             self.carregar_aprendizes()
 
@@ -165,11 +205,7 @@ class AprendizesPage(QWidget):
             return
 
         aprendiz = self.lista_visivel[linha]
-
-        dialog = AprendizDialog(
-            self,
-            aprendiz=aprendiz,
-        )
+        dialog = AprendizDialog(self, aprendiz=aprendiz)
 
         if dialog.exec():
             self.carregar_aprendizes()
