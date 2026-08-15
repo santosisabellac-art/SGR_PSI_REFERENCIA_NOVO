@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QFont
 
 from app.services.aprendiz_service import AprendizService
+from app.ui_qt.dialogs.aprendiz_dialog import AprendizDialog
 
 
 class AgendaPage(QWidget):
@@ -36,11 +37,15 @@ class AgendaPage(QWidget):
         titulo = QLabel("Agenda de Atendimentos")
         titulo.setFont(QFont("Segoe UI", 24, QFont.Bold))
 
+        self.botao_editar = QPushButton("✏ Editar Aprendiz")
         self.botao_atualizar = QPushButton("Atualizar")
+
+        self.botao_editar.clicked.connect(self.editar_aprendiz)
         self.botao_atualizar.clicked.connect(self.carregar_agenda)
 
         cabecalho.addWidget(titulo)
         cabecalho.addStretch()
+        cabecalho.addWidget(self.botao_editar)
         cabecalho.addWidget(self.botao_atualizar)
 
         layout.addLayout(cabecalho)
@@ -79,6 +84,8 @@ class AgendaPage(QWidget):
         self.tabela.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tabela.setSelectionMode(QAbstractItemView.SingleSelection)
         self.tabela.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tabela.itemSelectionChanged.connect(self.atualizar_botao_editar)
+        self.tabela.doubleClicked.connect(self.editar_aprendiz)
 
         layout.addWidget(self.tabela)
 
@@ -183,3 +190,23 @@ class AgendaPage(QWidget):
             self.aviso.setText("Nenhum atendimento encontrado para o filtro atual.")
         else:
             self.aviso.setText("")
+
+        self.atualizar_botao_editar()
+
+    def aprendiz_selecionado(self):
+        linha = self.tabela.currentRow()
+        if linha < 0 or linha >= len(self.lista_visivel):
+            return None
+        return self.lista_visivel[linha]
+
+    def atualizar_botao_editar(self):
+        self.botao_editar.setEnabled(self.aprendiz_selecionado() is not None)
+
+    def editar_aprendiz(self):
+        aprendiz = self.aprendiz_selecionado()
+        if aprendiz is None:
+            return
+
+        dialog = AprendizDialog(self, aprendiz=aprendiz)
+        if dialog.exec():
+            self.carregar_agenda()
