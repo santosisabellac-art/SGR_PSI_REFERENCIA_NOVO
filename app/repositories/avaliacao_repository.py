@@ -12,19 +12,10 @@ class AvaliacaoRepository:
             .where(Avaliacao.aprendiz_id == aprendiz_id)
             .order_by(Avaliacao.data.desc(), Avaliacao.id.desc())
         )
-
         with SessionLocal() as session:
             return session.scalars(consulta).all()
 
-    def criar(
-        self,
-        aprendiz_id,
-        data,
-        instrumento,
-        responsavel,
-        sintese,
-        proximos_passos="",
-    ):
+    def criar(self, aprendiz_id, data, instrumento, responsavel, sintese, proximos_passos=""):
         with SessionLocal() as session:
             avaliacao = Avaliacao(
                 aprendiz_id=aprendiz_id,
@@ -34,21 +25,30 @@ class AvaliacaoRepository:
                 sintese=sintese,
                 proximos_passos=proximos_passos,
             )
-
             session.add(avaliacao)
             session.commit()
             session.refresh(avaliacao)
+            return avaliacao
 
+    def atualizar(self, avaliacao_id, data, instrumento, responsavel, sintese, proximos_passos=""):
+        with SessionLocal() as session:
+            avaliacao = session.get(Avaliacao, avaliacao_id)
+            if avaliacao is None:
+                return None
+            avaliacao.data = data
+            avaliacao.instrumento = instrumento
+            avaliacao.responsavel = responsavel
+            avaliacao.sintese = sintese
+            avaliacao.proximos_passos = proximos_passos
+            session.commit()
+            session.refresh(avaliacao)
             return avaliacao
 
     def excluir(self, avaliacao_id):
         with SessionLocal() as session:
             avaliacao = session.get(Avaliacao, avaliacao_id)
-
             if avaliacao is None:
                 return False
-
             session.delete(avaliacao)
             session.commit()
-
             return True
