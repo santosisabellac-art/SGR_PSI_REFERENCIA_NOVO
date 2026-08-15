@@ -2,6 +2,8 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+from app.database.database import engine
+
 
 class BackupService:
 
@@ -50,3 +52,25 @@ class BackupService:
             raise ValueError("O backup não passou na verificação de integridade do SQLite.")
 
         return True
+
+    def restaurar_backup(self, arquivo):
+        arquivo = Path(arquivo)
+        self.validar_backup(arquivo)
+
+        if arquivo.resolve() == self.banco_path.resolve():
+            raise ValueError("O arquivo selecionado já é o banco de dados atual.")
+
+        if not self.banco_path.parent.exists():
+            self.banco_path.parent.mkdir(parents=True, exist_ok=True)
+
+        engine.dispose()
+
+        try:
+            with sqlite3.connect(arquivo) as origem:
+                with sqlite3.connect(self.banco_path) as destino:
+                    origem.backup(destino)
+        finally:
+            engine.dispose()
+
+        self.validar_backup(self.banco_path)
+        return self.banco_path
