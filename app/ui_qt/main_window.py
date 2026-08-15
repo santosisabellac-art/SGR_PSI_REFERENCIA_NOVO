@@ -12,7 +12,7 @@ from app.ui_qt.pages.aprendizes_page import AprendizesPage
 from app.ui_qt.pages.configuracoes_page import ConfiguracoesPage
 from app.ui_qt.pages.dashboard_page import DashboardPage
 from app.ui_qt.pages.documentos_page import DocumentosPage
-from app.ui_qt.pages.painel_360_avaliacao_page import Painel360AvaliacaoPage
+from app.ui_qt.pages.painel_360_documento_page import Painel360DocumentoPage
 from app.ui_qt.theme.theme import Theme
 
 
@@ -79,7 +79,7 @@ class MainWindow(QMainWindow):
             self.stack.removeWidget(self.painel_360)
             self.painel_360.deleteLater()
 
-        self.painel_360 = Painel360AvaliacaoPage(aprendiz)
+        self.painel_360 = Painel360DocumentoPage(aprendiz)
         self.painel_360.aprendiz_atualizado.connect(
             self.aprendizes.carregar_aprendizes
         )
