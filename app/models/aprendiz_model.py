@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy.orm import relationship
 
 from app.database.database import Base
 
@@ -27,6 +28,31 @@ class Aprendiz(Base):
     observacoes = Column(String(500))
 
     ativo = Column(Boolean, default=True)
+
+    # Relacionamento com pendências
+    pendencias = relationship(
+        "Pendencia",
+        back_populates="aprendiz",
+        cascade="all, delete-orphan",
+    )
+
+    documentos = relationship(
+        "Documento",
+        back_populates="aprendiz",
+        cascade="all, delete-orphan",
+    )
+
+    supervisoes = relationship(
+        "Supervisao",
+        back_populates="aprendiz",
+        cascade="all, delete-orphan",
+    )
+
+    avaliacoes = relationship(
+        "Avaliacao",
+        back_populates="aprendiz",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<Aprendiz(nome='{self.nome}')>"

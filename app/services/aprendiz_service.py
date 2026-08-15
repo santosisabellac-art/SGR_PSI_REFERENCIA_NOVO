@@ -34,3 +34,31 @@ class AprendizService:
             carga_horaria_aba=carga_horaria_aba,
             observacoes=observacoes,
         )
+
+    def atualizar(
+        self,
+        aprendiz_id,
+        nome,
+        codigo,
+        nivel_suporte,
+        dias_atendimento="",
+        horario="",
+        sala="",
+        carga_horaria_aba="",
+        observacoes="",
+    ):
+
+        return self.repository.atualizar(
+            aprendiz_id=aprendiz_id,
+            nome=nome,
+            codigo=codigo,
+            nivel_suporte=nivel_suporte,
+            dias_atendimento=dias_atendimento,
+            horario=horario,
+            sala=sala,
+            carga_horaria_aba=carga_horaria_aba,
+            observacoes=observacoes,
+        )
+
+    def excluir(self, aprendiz_id):
+        return self.repository.excluir(aprendiz_id)

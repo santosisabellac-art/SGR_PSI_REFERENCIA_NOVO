@@ -44,9 +44,55 @@ class AprendizRepository:
             )
 
             session.add(aprendiz)
-
             session.commit()
-
             session.refresh(aprendiz)
 
             return aprendiz
+
+    def atualizar(
+        self,
+        aprendiz_id,
+        nome,
+        codigo,
+        nivel_suporte,
+        dias_atendimento="",
+        horario="",
+        sala="",
+        carga_horaria_aba="",
+        observacoes="",
+    ):
+
+        with SessionLocal() as session:
+
+            aprendiz = session.get(Aprendiz, aprendiz_id)
+
+            if aprendiz is None:
+                return None
+
+            aprendiz.nome = nome
+            aprendiz.codigo = codigo
+            aprendiz.nivel_suporte = nivel_suporte
+            aprendiz.dias_atendimento = dias_atendimento
+            aprendiz.horario = horario
+            aprendiz.sala = sala
+            aprendiz.carga_horaria_aba = carga_horaria_aba
+            aprendiz.observacoes = observacoes
+
+            session.commit()
+            session.refresh(aprendiz)
+
+            return aprendiz
+
+    def excluir(self, aprendiz_id):
+
+        with SessionLocal() as session:
+
+            aprendiz = session.get(Aprendiz, aprendiz_id)
+
+            if aprendiz is None:
+                return False
+
+            session.delete(aprendiz)
+            session.commit()
+
+            return True
