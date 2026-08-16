@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database.database import SessionLocal
 from app.models.aprendiz_model import Aprendiz
@@ -11,8 +12,18 @@ class AprendizRepository:
             return session.scalars(select(Aprendiz).order_by(Aprendiz.nome)).all()
 
     def buscar_por_id(self, aprendiz_id):
+        consulta = (
+            select(Aprendiz)
+            .options(
+                selectinload(Aprendiz.pendencias),
+                selectinload(Aprendiz.documentos),
+                selectinload(Aprendiz.supervisoes),
+                selectinload(Aprendiz.avaliacoes),
+            )
+            .where(Aprendiz.id == aprendiz_id)
+        )
         with SessionLocal() as session:
-            return session.get(Aprendiz, aprendiz_id)
+            return session.scalars(consulta).first()
 
     def criar(self, nome, codigo, nivel_suporte, dias_atendimento="", horario="", sala="", carga_horaria_aba="", observacoes=""):
         with SessionLocal() as session:
