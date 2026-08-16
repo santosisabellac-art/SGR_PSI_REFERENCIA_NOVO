@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -13,15 +14,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from app.services.aprendiz_service import AprendizService
 from app.services.dashboard_service import DashboardService
 
 
 class DashboardPage(QWidget):
+    aprendiz_solicitado = Signal(object)
 
     def __init__(self):
         super().__init__()
 
         self.service = DashboardService()
+        self.aprendiz_service = AprendizService()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(30, 30, 30, 30)
@@ -72,6 +76,7 @@ class DashboardPage(QWidget):
         self.tabela_agenda.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tabela_agenda.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tabela_agenda.setMinimumHeight(180)
+        self.tabela_agenda.doubleClicked.connect(self.abrir_aprendiz_da_agenda)
         layout.addWidget(self.tabela_agenda)
 
         titulo_prioridades = QLabel("Prioridades")
@@ -89,6 +94,7 @@ class DashboardPage(QWidget):
         self.tabela_prioridades.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tabela_prioridades.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tabela_prioridades.setMinimumHeight(210)
+        self.tabela_prioridades.doubleClicked.connect(self.abrir_aprendiz_da_prioridade)
         layout.addWidget(self.tabela_prioridades)
 
         titulo_alertas = QLabel("Alertas de cadastro")
@@ -164,3 +170,22 @@ class DashboardPage(QWidget):
             self.lista_alertas.addItems(alertas)
         else:
             self.lista_alertas.addItem("Nenhum alerta de cadastro.")
+
+    def _emitir_aprendiz(self, aprendiz_id):
+        if aprendiz_id is None:
+            return
+        aprendiz = self.aprendiz_service.buscar(aprendiz_id)
+        if aprendiz is not None:
+            self.aprendiz_solicitado.emit(aprendiz)
+
+    def abrir_aprendiz_da_agenda(self, index):
+        if not index.isValid():
+            return
+        item = self.service.resumo()["agenda"][index.row()]
+        self._emitir_aprendiz(item.get("aprendiz_id"))
+
+    def abrir_aprendiz_da_prioridade(self, index):
+        if not index.isValid():
+            return
+        item = self.service.resumo()["prioridades"][index.row()]
+        self._emitir_aprendiz(item.get("aprendiz_id"))
