@@ -54,6 +54,7 @@ class MainWindow(QMainWindow):
 
         self.sidebar.pagina_selecionada.connect(self.trocar_pagina)
         self.aprendizes.painel_solicitado.connect(self.abrir_painel_360)
+        self.dashboard.aprendiz_solicitado.connect(self.abrir_painel_360)
 
     def trocar_pagina(self, pagina):
         if pagina == "home":
