@@ -1,4 +1,4 @@
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QListWidget,
+    QMessageBox,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from app.services.aprendiz_service import AprendizService
 from app.services.dashboard_service import DashboardService
+from app.services.pendencia_service import PendenciaService
 
 
 class DashboardPage(QWidget):
@@ -26,6 +28,7 @@ class DashboardPage(QWidget):
 
         self.service = DashboardService()
         self.aprendiz_service = AprendizService()
+        self.pendencia_service = PendenciaService()
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(30, 30, 30, 30)
@@ -95,7 +98,18 @@ class DashboardPage(QWidget):
         self.tabela_prioridades.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tabela_prioridades.setMinimumHeight(210)
         self.tabela_prioridades.doubleClicked.connect(self.abrir_aprendiz_da_prioridade)
+        self.tabela_prioridades.itemSelectionChanged.connect(self.atualizar_acoes_prioridade)
         layout.addWidget(self.tabela_prioridades)
+
+        acoes_prioridade = QHBoxLayout()
+        self.botao_abrir_prioridade = QPushButton("Abrir Painel 360º")
+        self.botao_concluir_pendencia = QPushButton("Concluir pendência")
+        self.botao_abrir_prioridade.clicked.connect(self.abrir_prioridade_selecionada)
+        self.botao_concluir_pendencia.clicked.connect(self.concluir_pendencia_selecionada)
+        acoes_prioridade.addWidget(self.botao_abrir_prioridade)
+        acoes_prioridade.addWidget(self.botao_concluir_pendencia)
+        acoes_prioridade.addStretch()
+        layout.addLayout(acoes_prioridade)
 
         titulo_alertas = QLabel("Alertas de cadastro")
         titulo_alertas.setFont(QFont("Segoe UI", 14, QFont.Bold))
@@ -170,6 +184,79 @@ class DashboardPage(QWidget):
             self.lista_alertas.addItems(alertas)
         else:
             self.lista_alertas.addItem("Nenhum alerta de cadastro.")
+
+        self.atualizar_acoes_prioridade()
+
+    def prioridade_selecionada(self):
+        linha = self.tabela_prioridades.currentRow()
+        prioridades = self.service.resumo()["prioridades"]
+        if linha < 0 or linha >= len(prioridades):
+            return None
+        return prioridades[linha]
+
+    def atualizar_acoes_prioridade(self):
+        prioridade = self.prioridade_selecionada()
+        habilitar = prioridade is not None
+        self.botao_abrir_prioridade.setEnabled(habilitar)
+        self.botao_concluir_pendencia.setEnabled(
+            habilitar and prioridade.get("prioridade") == "Pendência aberta"
+        )
+
+    def abrir_prioridade_selecionada(self):
+        prioridade = self.prioridade_selecionada()
+        if prioridade is None:
+            return
+        self._emitir_aprendiz(prioridade.get("aprendiz_id"))
+
+    def concluir_pendencia_selecionada(self):
+        prioridade = self.prioridade_selecionada()
+        if prioridade is None or prioridade.get("prioridade") != "Pendência aberta":
+            return
+
+        titulo = prioridade.get("detalhe", "esta pendência")
+        resposta = QMessageBox.question(
+            self,
+            "Concluir pendência",
+            f"Deseja realmente concluir a pendência:\n\n{titulo}?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if resposta != QMessageBox.Yes:
+            return
+
+        pendencias = self.service.pendencias_abertas()
+        pendencia = next(
+            (
+                registro
+                for registro in pendencias
+                if registro.aprendiz_id == prioridade.get("aprendiz_id")
+                and registro.titulo == titulo
+            ),
+            None,
+        )
+        if pendencia is None:
+            QMessageBox.warning(
+                self,
+                "Pendência não encontrada",
+                "A pendência selecionada não está mais disponível.",
+            )
+            self.atualizar_dashboard()
+            return
+
+        resultado = self.pendencia_service.concluir(pendencia.id)
+        if resultado:
+            self.atualizar_dashboard()
+            QMessageBox.information(
+                self,
+                "Pendência concluída",
+                "A pendência foi concluída com sucesso.",
+            )
+        else:
+            QMessageBox.warning(
+                self,
+                "Conclusão não realizada",
+                "Não foi possível concluir a pendência selecionada.",
+            )
+            self.atualizar_dashboard()
 
     def _emitir_aprendiz(self, aprendiz_id):
         if aprendiz_id is None:
