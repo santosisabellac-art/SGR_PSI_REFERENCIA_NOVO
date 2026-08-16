@@ -29,5 +29,8 @@ class PendenciaService:
     def concluir(self, pendencia_id):
         return self.repository.concluir(pendencia_id)
 
+    def reabrir(self, pendencia_id):
+        return self.repository.reabrir(pendencia_id)
+
     def excluir(self, pendencia_id):
         return self.repository.excluir(pendencia_id)
