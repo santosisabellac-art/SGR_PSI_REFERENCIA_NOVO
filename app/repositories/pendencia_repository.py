@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
 from app.database.database import SessionLocal
 from app.models.pendencia_model import Pendencia
@@ -6,10 +7,13 @@ from app.models.pendencia_model import Pendencia
 
 class PendenciaRepository:
 
+    def _consulta_base(self):
+        return select(Pendencia).options(joinedload(Pendencia.aprendiz))
+
     def listar(self):
         with SessionLocal() as session:
             return session.scalars(
-                select(Pendencia).order_by(
+                self._consulta_base().order_by(
                     Pendencia.concluida,
                     Pendencia.id.desc(),
                 )
@@ -18,7 +22,7 @@ class PendenciaRepository:
     def listar_por_aprendiz(self, aprendiz_id):
         with SessionLocal() as session:
             return session.scalars(
-                select(Pendencia)
+                self._consulta_base()
                 .where(Pendencia.aprendiz_id == aprendiz_id)
                 .order_by(Pendencia.concluida, Pendencia.id.desc())
             ).all()
