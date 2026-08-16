@@ -33,6 +33,7 @@ class DashboardService:
             pendencias = self.pendencias_abertas()
         return [
             {
+                "aprendiz_id": p.aprendiz_id,
                 "aprendiz": p.aprendiz.nome if p.aprendiz else "Aprendiz não encontrado",
                 "titulo": p.titulo,
             }
@@ -58,12 +59,14 @@ class DashboardService:
         prioridades = []
         for documento in self.documentos_vencidos():
             prioridades.append({
+                "aprendiz_id": documento.aprendiz_id,
                 "prioridade": "Documento vencido",
                 "aprendiz": nomes.get(documento.aprendiz_id, "Aprendiz não encontrado"),
                 "detalhe": documento.tipo,
             })
         for pendencia in self.pendencias_abertas():
             prioridades.append({
+                "aprendiz_id": pendencia.aprendiz_id,
                 "prioridade": "Pendência aberta",
                 "aprendiz": nomes.get(pendencia.aprendiz_id, "Aprendiz não encontrado"),
                 "detalhe": pendencia.titulo,
@@ -89,6 +92,7 @@ class DashboardService:
                 continue
             if any(dia in dias for dia in dias_hoje):
                 aprendizes.append({
+                    "aprendiz_id": aprendiz.id,
                     "nome": aprendiz.nome,
                     "horario": aprendiz.horario or "Não informado",
                     "sala": aprendiz.sala or "-",
