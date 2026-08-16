@@ -1,6 +1,7 @@
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
-from app.database.session import SessionLocal
+from app.database.database import SessionLocal
 from app.models.supervisao_model import Supervisao
 
 
@@ -9,22 +10,14 @@ class SupervisaoRepository:
     def listar_por_aprendiz(self, aprendiz_id):
         consulta = (
             select(Supervisao)
+            .options(joinedload(Supervisao.aprendiz))
             .where(Supervisao.aprendiz_id == aprendiz_id)
             .order_by(Supervisao.data.desc(), Supervisao.id.desc())
         )
-
         with SessionLocal() as session:
             return session.scalars(consulta).all()
 
-    def criar(
-        self,
-        aprendiz_id,
-        data,
-        responsavel,
-        resumo,
-        orientacoes="",
-        proximos_passos="",
-    ):
+    def criar(self, aprendiz_id, data, responsavel, resumo, orientacoes="", proximos_passos=""):
         with SessionLocal() as session:
             supervisao = Supervisao(
                 aprendiz_id=aprendiz_id,
@@ -39,15 +32,7 @@ class SupervisaoRepository:
             session.refresh(supervisao)
             return supervisao
 
-    def atualizar(
-        self,
-        supervisao_id,
-        data,
-        responsavel,
-        resumo,
-        orientacoes="",
-        proximos_passos="",
-    ):
+    def atualizar(self, supervisao_id, data, responsavel, resumo, orientacoes="", proximos_passos=""):
         with SessionLocal() as session:
             supervisao = session.get(Supervisao, supervisao_id)
             if supervisao is None:
