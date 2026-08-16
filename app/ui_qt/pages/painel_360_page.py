@@ -149,7 +149,14 @@ class Painel360Page(QWidget):
     def excluir_pendencia_selecionada(self):
         item=self.lista_pendencias.currentItem();
         if item is None or item.data(Qt.UserRole) is None:return
-        if QMessageBox.question(self,"Excluir pendência","Deseja realmente excluir a pendência selecionada?",QMessageBox.Yes|QMessageBox.No)==QMessageBox.Yes:self.pendencia_service.excluir(item.data(Qt.UserRole));self.atualizar_pendencias()
+        if QMessageBox.question(self,"Excluir pendência","Deseja realmente excluir a pendência selecionada?",QMessageBox.Yes|QMessageBox.No)==QMessageBox.Yes:
+            resultado=self.pendencia_service.excluir(item.data(Qt.UserRole))
+            if resultado:
+                self.atualizar_pendencias()
+                QMessageBox.information(self,"Exclusão concluída","A pendência foi excluída com sucesso.")
+            else:
+                QMessageBox.warning(self,"Exclusão não concluída","A pendência não foi localizada ou não pôde ser excluída.")
+                self.atualizar_pendencias()
 
     def atualizar_documentos(self):
         docs=[d for d in self.documento_service.listar() if d.aprendiz_id==self.aprendiz.id and self.documento_service.situacao(d)!="Entregue"]; self.contador_documentos.setText("1 documento pendente" if len(docs)==1 else f"{len(docs)} documentos pendentes"); self.lista_documentos.clear()
@@ -182,7 +189,14 @@ class Painel360Page(QWidget):
     def excluir_supervisao_selecionada(self):
         item=self.lista_supervisoes.currentItem();
         if item is None or item.data(Qt.UserRole) is None:return
-        if QMessageBox.question(self,"Excluir supervisão","Deseja realmente excluir o registro selecionado?",QMessageBox.Yes|QMessageBox.No)==QMessageBox.Yes:self.supervisao_service.excluir(item.data(Qt.UserRole));self.atualizar_supervisoes()
+        if QMessageBox.question(self,"Excluir supervisão","Deseja realmente excluir o registro selecionado?",QMessageBox.Yes|QMessageBox.No)==QMessageBox.Yes:
+            resultado=self.supervisao_service.excluir(item.data(Qt.UserRole))
+            if resultado:
+                self.atualizar_supervisoes()
+                QMessageBox.information(self,"Exclusão concluída","A supervisão foi excluída com sucesso.")
+            else:
+                QMessageBox.warning(self,"Exclusão não concluída","A supervisão não foi localizada ou não pôde ser excluída.")
+                self.atualizar_supervisoes()
 
     def atualizar_avaliacoes(self):
         regs=self.avaliacao_service.listar_por_aprendiz(self.aprendiz.id);self.contador_avaliacoes.setText("1 avaliação registrada" if len(regs)==1 else f"{len(regs)} avaliações registradas");self.lista_avaliacoes.clear()
@@ -205,7 +219,14 @@ class Painel360Page(QWidget):
     def excluir_avaliacao_selecionada(self):
         item=self.lista_avaliacoes.currentItem();
         if item is None or item.data(Qt.UserRole) is None:return
-        if QMessageBox.question(self,"Excluir avaliação","Deseja realmente excluir o registro selecionado?",QMessageBox.Yes|QMessageBox.No)==QMessageBox.Yes:self.avaliacao_service.excluir(item.data(Qt.UserRole));self.atualizar_avaliacoes()
+        if QMessageBox.question(self,"Excluir avaliação","Deseja realmente excluir o registro selecionado?",QMessageBox.Yes|QMessageBox.No)==QMessageBox.Yes:
+            resultado=self.avaliacao_service.excluir(item.data(Qt.UserRole))
+            if resultado:
+                self.atualizar_avaliacoes()
+                QMessageBox.information(self,"Exclusão concluída","A avaliação foi excluída com sucesso.")
+            else:
+                QMessageBox.warning(self,"Exclusão não concluída","A avaliação não foi localizada ou não pôde ser excluída.")
+                self.atualizar_avaliacoes()
 
     def editar_cadastro(self):
         if not AprendizDialog(self,aprendiz=self.aprendiz).exec():return
