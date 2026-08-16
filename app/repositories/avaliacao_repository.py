@@ -1,6 +1,7 @@
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
-from app.database.session import SessionLocal
+from app.database.database import SessionLocal
 from app.models.avaliacao_model import Avaliacao
 
 
@@ -9,6 +10,7 @@ class AvaliacaoRepository:
     def listar_por_aprendiz(self, aprendiz_id):
         consulta = (
             select(Avaliacao)
+            .options(joinedload(Avaliacao.aprendiz))
             .where(Avaliacao.aprendiz_id == aprendiz_id)
             .order_by(Avaliacao.data.desc(), Avaliacao.id.desc())
         )
