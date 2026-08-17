@@ -59,6 +59,7 @@ class DashboardService:
         prioridades = []
         for documento in self.documentos_vencidos():
             prioridades.append({
+                "registro_id": documento.id,
                 "aprendiz_id": documento.aprendiz_id,
                 "prioridade": "Documento vencido",
                 "aprendiz": nomes.get(documento.aprendiz_id, "Aprendiz não encontrado"),
@@ -66,6 +67,7 @@ class DashboardService:
             })
         for pendencia in self.pendencias_abertas():
             prioridades.append({
+                "registro_id": pendencia.id,
                 "aprendiz_id": pendencia.aprendiz_id,
                 "prioridade": "Pendência aberta",
                 "aprendiz": nomes.get(pendencia.aprendiz_id, "Aprendiz não encontrado"),
