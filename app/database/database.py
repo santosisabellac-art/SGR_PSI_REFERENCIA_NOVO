@@ -19,9 +19,8 @@ Base = declarative_base()
 
 
 def criar_banco():
-
-    # Importar TODOS os modelos aqui
     from app.models.aprendiz_model import Aprendiz
+    from app.models.atividade_model import Atividade
     from app.models.avaliacao_model import Avaliacao
     from app.models.documento_model import Documento
     from app.models.pendencia_model import Pendencia
